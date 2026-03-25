@@ -3,6 +3,7 @@ export interface SearchStep {
   high: number;
   mid: number;
   value: number;
+  stepNumber: number;
 }
 
 export const getBinarySearchSteps = (
@@ -15,7 +16,7 @@ export const getBinarySearchSteps = (
 
   while (low <= high) {
     const mid = Math.floor((low + high) / 2);
-    steps.push({ low, high, mid, value: array[mid] });
+    steps.push({ low, high, mid, value: array[mid], stepNumber: steps.length + 1 });
 
     if (array[mid] === target) break;
     if (array[mid] < target) {

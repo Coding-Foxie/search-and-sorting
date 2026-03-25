@@ -45,103 +45,104 @@ export default function BinarySearchVisualizer() {
   };
 
   return (
-    <div className="h-screen w-full bg-slate-950 flex flex-col items-center justify-center p-4">
-      <div className="p-8 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-800 w-full max-w-4xl">
-        <h1 className="text-2xl font-bold text-center mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-          Binary Search Visualizer
-        </h1>
+    <div className="h-screen w-full bg-slate-950 flex items-center justify-center p-2 sm:p-4 font-sans text-slate-200">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col">
 
-        {/* INPUT SECTION */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-slate-950/50 p-6 rounded-xl border border-slate-800/50">
-          <div>
-            <label className="block text-xs font-mono text-purple-400 mb-2 uppercase tracking-widest">
-              Input Data (Comma Separated)
-            </label>
+        {/* HEADER & INPUTS (Top Bar) */}
+        <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-col md:flex-row items-center justify-between gap-6">
+          <h1 className="text-xl font-black bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent uppercase tracking-tighter">
+            InnoTrace: Binary
+          </h1>
+
+          <div className="flex flex-1 max-w-2xl gap-3">
             <input
               type="text"
               value={dataInput}
               onChange={(e) => setDataInput(e.target.value)}
               disabled={isSearching}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:border-purple-500 outline-none transition-all disabled:opacity-50"
-              placeholder="e.g. 5, 10, 15..."
+              className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-purple-500 outline-none transition-all opacity-80"
+              placeholder="Data: 10, 20, 30..."
             />
-          </div>
-          <div>
-            <label className="block text-xs font-mono text-purple-400 mb-2 uppercase tracking-widest">
-              Goal / Target
-            </label>
             <input
-              type="text"
+              type="number"
               value={goalInput}
               onChange={(e) => setGoalInput(e.target.value)}
               disabled={isSearching}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:border-purple-500 outline-none transition-all disabled:opacity-50"
+              className="w-24 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-purple-500 outline-none transition-all opacity-80"
             />
+          </div>
+
+          <div className="flex gap-2">
+            <button onClick={startSearch} disabled={isSearching} className="bg-purple-600 hover:bg-purple-500 px-5 py-2 rounded-xl font-bold text-sm transition-transform active:scale-95 disabled:opacity-20">
+              {isSearching ? '...' : 'RUN'}
+            </button>
+            <button onClick={resetDemo} disabled={isSearching} className="bg-slate-800 hover:bg-slate-700 px-5 py-2 rounded-xl font-bold text-sm border border-slate-700">
+              RESET
+            </button>
           </div>
         </div>
 
-        {/* VISUALIZER ARRAY */}
-        <div className="flex flex-wrap gap-3 justify-center mb-10 min-h-[80px] items-center">
-          {currentArray.map((num, index) => {
-            // Logic for active search area
-            const isInactive = (index < low || index > high) && isSearching;
-            const isMid = index === mid;
-            const isFound = index === foundIndex;
+        {/* MAIN DASHBOARD GRID */}
+        <div className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-            return (
-              <div
-                key={`${num}-${index}`}
-                className={`w-14 h-14 flex items-center justify-center rounded-xl border-2 transition-all duration-500 text-lg font-bold relative
-                  ${isMid && !isFound ? 'border-purple-400 scale-110 bg-slate-800 shadow-[0_0_20px_rgba(192,132,252,0.3)]' : 'border-slate-800 bg-slate-950'}
-                  ${isFound ? 'border-green-500 bg-green-500/20 scale-110 shadow-[0_0_20px_rgba(34,197,94,0.4)]' : ''}
-                  ${isInactive ? 'opacity-20 grayscale scale-90' : 'opacity-100'}
-                `}
-              >
-                {num}
-                {/* Visual Pointers */}
-                {index === low && isSearching && !isFound && (
-                  <span className="absolute -bottom-6 text-[9px] text-blue-400 font-bold tracking-tighter">LOW</span>
-                )}
-                {index === high && isSearching && !isFound && (
-                  <span className="absolute -bottom-6 text-[9px] text-red-400 font-bold tracking-tighter">HIGH</span>
-                )}
+          {/* LEFT COLUMN: STATS & MATH */}
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
+              <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Binary Steps</span>
+              <span className="text-3xl font-black text-purple-400">{isSearching || foundIndex !== -1 ? (currentStep ? currentArray.indexOf(currentArray[mid]) !== -1 ? '...' : '0' : '0') : '0'}</span>
+              <div className="mt-4 pt-4 border-t border-slate-800">
+                <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Vs. Linear</span>
+                <span className="text-xl font-bold text-slate-500">{foundIndex !== -1 ? foundIndex + 1 : '—'}</span>
               </div>
-            );
-          })}
-        </div>
+            </div>
 
-        {/* CONTROLS */}
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={startSearch}
-            disabled={isSearching}
-            className="px-8 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-full transition-all active:scale-95"
-          >
-            {isSearching ? 'Calculating Mid...' : 'Run Search'}
-          </button>
-          <button
-            onClick={resetDemo}
-            disabled={isSearching}
-            className="px-8 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 font-bold rounded-full border border-slate-700"
-          >
-            Reset
-          </button>
-        </div>
+            <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 flex-1">
+              <span className="text-[10px] text-slate-500 font-mono uppercase block mb-4">Logic Trace</span>
+              <div className="font-mono text-xs space-y-2">
+                <div className="flex justify-between"><span>Low:</span> <span className="text-blue-400">{low}</span></div>
+                <div className="flex justify-between"><span>High:</span> <span className="text-red-400">{high}</span></div>
+                <div className="flex justify-between pt-2 border-t border-slate-800"><span>Mid:</span> <span className="text-purple-400 font-bold">{mid}</span></div>
+              </div>
+            </div>
+          </div>
 
-        {/* STATUS BAR */}
-        <div className="mt-8 text-center h-4">
-          {foundIndex !== -1 && (
-            <p className="text-green-400 font-bold animate-pulse">
-              Match found at index {foundIndex}!
-            </p>
-          )}
-          {!isSearching && low > high && foundIndex === -1 && currentStep !== null && (
-            <p className="text-red-400 font-bold italic">
-              Target {currentTarget} not found in the set.
-            </p>
-          )}
+          {/* RIGHT COLUMN: VISUALIZER */}
+          <div className="lg:col-span-3 bg-slate-950/30 rounded-2xl border border-slate-800/50 p-8 flex flex-col items-center justify-center relative overflow-hidden">
+
+            <div className="flex flex-wrap gap-2 justify-center max-w-full">
+              {currentArray.map((num, index) => {
+                const isInactive = (index < low || index > high) && isSearching;
+                const isMid = index === mid;
+                const isFound = index === foundIndex;
+
+                return (
+                  <div
+                    key={index}
+                    className={`w-12 h-12 flex items-center justify-center rounded-lg border text-sm font-mono transition-all duration-300 relative
+                    ${isMid && !isFound ? 'border-purple-400 bg-purple-400/10 scale-110 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'border-slate-800 bg-slate-900'}
+                    ${isFound ? 'border-green-500 bg-green-500 text-slate-950 scale-110' : ''}
+                    ${isInactive ? 'opacity-10 grayscale scale-90' : 'opacity-100'}
+                  `}
+                  >
+                    {num}
+                    {index === low && isSearching && !isFound && <div className="absolute -top-1 w-full h-1 bg-blue-500 rounded-full" />}
+                    {index === high && isSearching && !isFound && <div className="absolute -bottom-1 w-full h-1 bg-red-500 rounded-full" />}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* STATUS MESSAGE */}
+            <div className="absolute bottom-6 left-0 w-full text-center">
+              {foundIndex !== -1 ? (
+                <p className="text-green-400 text-sm font-bold tracking-widest uppercase">Target Found at Index {foundIndex}</p>
+              ) : isSearching ? (
+                <p className="text-purple-400 text-xs font-mono animate-pulse uppercase">Searching Space...</p>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
