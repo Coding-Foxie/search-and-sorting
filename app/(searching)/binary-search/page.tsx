@@ -45,8 +45,8 @@ export default function BinarySearchVisualizer() {
   };
 
   return (
-    <div className="h-screen w-full bg-slate-950 flex items-center justify-center p-2 sm:p-4 font-sans text-slate-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col">
+    <div className="h-[100dvh] w-full bg-slate-950 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-6xl h-full max-h-[900px] overflow-hidden flex flex-col">
 
         {/* HEADER & INPUTS (Top Bar) */}
         <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -83,34 +83,82 @@ export default function BinarySearchVisualizer() {
         </div>
 
         {/* MAIN DASHBOARD GRID */}
-        <div className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="flex-1 min-h-0 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
 
           {/* LEFT COLUMN: STATS & MATH */}
-          <div className="lg:col-span-1 flex flex-col gap-4">
-            <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Binary Steps</span>
-              {/* Change the span in your Left Column to this: */}
-              <span className="text-3xl font-black text-purple-400">
-                {currentStep?.stepNumber ?? 0}
-              </span>
-              <div className="mt-4 pt-4 border-t border-slate-800">
-                <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Vs. Linear</span>
-                <span className="text-xl font-bold text-slate-500">{foundIndex !== -1 ? foundIndex + 1 : '—'}</span>
+          <div className="lg:col-span-1 flex flex-col gap-4 overflow-y-auto scrollbar-hide">
+            {/* Step Counter Card */}
+            <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 shrink-0">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Efficiency Benchmarking</span>
+                {foundIndex !== -1 && (
+                  <span className="text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold animate-pulse">
+                    OPTIMIZED
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {/* BINARY STEPS (The Hero) */}
+                <div>
+                  <span className="text-[10px] text-purple-400 font-mono uppercase block mb-1">Binary Search</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-4xl font-black transition-colors duration-500 ${foundIndex !== -1 ? 'text-green-400' : 'text-white'}`}>
+                      {currentStep?.stepNumber ?? 0}
+                    </span>
+                    <span className="text-xs text-slate-500 font-mono">STEPS</span>
+                  </div>
+                </div>
+
+                {/* LINEAR STEPS (The Comparison) */}
+                <div className={`pt-4 border-t border-slate-800/50 transition-all duration-500 ${foundIndex !== -1 ? 'opacity-100' : 'opacity-40'}`}>
+                  <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Linear Equivalent</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-xl font-bold transition-colors duration-500 ${foundIndex !== -1 ? 'text-red-500' : 'text-slate-600'}`}>
+                      {foundIndex !== -1 ? foundIndex + 1 : '—'}
+                    </span>
+                    <span className="text-[10px] text-slate-600 font-mono italic">
+                      {foundIndex !== -1 ? 'STOPS NEEDED' : ''}
+                    </span>
+                  </div>
+
+                  {/* SAVINGS BADGE */}
+                  {foundIndex !== -1 && (
+                    <p className="text-[10px] text-green-500/80 mt-2 font-mono font-bold italic">
+                      ✨ {Math.round(((foundIndex + 1 - currentStep!.stepNumber) / (foundIndex + 1)) * 100)}% Faster
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 flex-1">
-              <span className="text-[10px] text-slate-500 font-mono uppercase block mb-4">Logic Trace</span>
-              <div className="font-mono text-xs space-y-2">
-                <div className="flex justify-between"><span>Low:</span> <span className="text-blue-400">{low}</span></div>
-                <div className="flex justify-between"><span>High:</span> <span className="text-red-400">{high}</span></div>
-                <div className="flex justify-between pt-2 border-t border-slate-800"><span>Mid:</span> <span className="text-purple-400 font-bold">{mid}</span></div>
+            {/* Logic Trace Card */}
+            <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 shrink-0">
+              <span className="text-[10px] text-slate-500 font-mono uppercase block mb-4 tracking-widest">Logic Trace (Indices)</span>
+
+              <div className="font-mono text-sm space-y-3">
+                <div className="flex justify-between items-center p-2 rounded-lg bg-blue-500/5 border border-blue-500/10">
+                  <span className="text-blue-400 font-bold">LOW</span>
+                  <span className="text-blue-200 bg-blue-500/20 px-2 py-0.5 rounded">{low === -1 ? '—' : low}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-2 rounded-lg bg-red-500/5 border border-red-500/10">
+                  <span className="text-red-400 font-bold">HIGH</span>
+                  <span className="text-red-200 bg-red-500/20 px-2 py-0.5 rounded">{high === -1 ? '—' : high}</span>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <span className="text-purple-400 font-black">MID</span>
+                  <span className="text-purple-100 bg-purple-500/40 px-3 py-0.5 rounded shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+                    {mid === -1 ? '—' : mid}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* RIGHT COLUMN: VISUALIZER */}
-          <div className="lg:col-span-3 bg-slate-950/30 rounded-2xl border border-slate-800/50 p-8 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="lg:col-span-3 bg-slate-950/30 rounded-2xl border border-slate-800/50 p-4 flex flex-col items-center justify-center relative overflow-hidden">
 
             <div className="flex flex-wrap gap-2 justify-center max-w-full">
               {currentArray.map((num, index) => {
@@ -121,27 +169,67 @@ export default function BinarySearchVisualizer() {
                 return (
                   <div
                     key={index}
-                    className={`w-12 h-12 flex items-center justify-center rounded-lg border text-sm font-mono transition-all duration-300 relative
-                    ${isMid && !isFound ? 'border-purple-400 bg-purple-400/10 scale-110 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'border-slate-800 bg-slate-900'}
-                    ${isFound ? 'border-green-500 bg-green-500 text-slate-950 scale-110' : ''}
-                    ${isInactive ? 'opacity-10 grayscale scale-90' : 'opacity-100'}
-                  `}
+                    className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-xl border-2 text-lg font-bold transition-all duration-300 relative
+            ${isMid && !isFound
+                        ? 'border-purple-400 bg-purple-500/20 scale-110 shadow-[0_0_30px_rgba(168,85,247,0.4)] z-10 animate-pulse'
+                        : 'border-slate-800 bg-slate-950'}
+            ${isFound
+                        ? 'text-white border-green-500 bg-green-500 scale-125 shadow-[0_0_40px_rgba(34,197,94,0.6)] z-20'
+                        : ''}
+            ${isInactive ? 'opacity-10 grayscale scale-90' : 'opacity-100'}
+          `}
                   >
-                    {num}
-                    {index === low && isSearching && !isFound && <div className="absolute -top-1 w-full h-1 bg-blue-500 rounded-full" />}
-                    {index === high && isSearching && !isFound && <div className="absolute -bottom-1 w-full h-1 bg-red-500 rounded-full" />}
+                    <span className={`${isFound ? 'text-slate-350 font-black' : 'text-slate-200'} transition-colors duration-300`}>
+                      {num}
+                    </span>
+
+                    {/* FLOATING MID BADGE */}
+                    {isMid && isSearching && !isFound && (
+                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-purple-500 text-[10px] text-white px-2 py-1 rounded-md font-black shadow-lg animate-bounce uppercase tracking-tighter">
+                        Mid
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-purple-500 rotate-45" />
+                      </div>
+                    )}
+
+                    {/* POINTERS */}
+                    {index === low && isSearching && !isFound && (
+                      <span className="absolute -bottom-6 text-[10px] text-blue-400 font-mono font-bold tracking-widest uppercase">Low</span>
+                    )}
+                    {index === high && isSearching && !isFound && (
+                      <span className="absolute -bottom-6 text-[10px] text-red-400 font-mono font-bold tracking-widest uppercase">High</span>
+                    )}
                   </div>
                 );
               })}
             </div>
 
-            {/* STATUS MESSAGE */}
-            <div className="absolute bottom-6 left-0 w-full text-center">
+            {/* STATUS MESSAGE AREA */}
+            <div className="absolute bottom-8 left-0 w-full flex flex-col items-center justify-center pointer-events-none">
               {foundIndex !== -1 ? (
-                <p className="text-green-400 text-sm font-bold tracking-widest uppercase">Target Found at Index {foundIndex}</p>
+                <div className="animate-in fade-in zoom-in duration-500 flex flex-col items-center">
+                  <div className="bg-green-500 text-slate-950 px-6 py-2 rounded-full font-black uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(34,197,94,0.4)] flex items-center gap-2 mb-2">
+                    <span>Target Found!</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                  </div>
+                  <p className="text-green-400 font-mono text-[10px] uppercase tracking-widest opacity-80">
+                    Index {foundIndex} located in {currentStep?.stepNumber} steps
+                  </p>
+                </div>
               ) : isSearching ? (
-                <p className="text-purple-400 text-xs font-mono animate-pulse uppercase">Searching Space...</p>
-              ) : null}
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-purple-400 text-xs font-mono animate-pulse uppercase tracking-[0.3em]">
+                    Searching Space...
+                  </p>
+                  {/* Small loading bar for "Searching" vibe */}
+                  <div className="w-32 h-1 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-purple-500 animate-[loading_1.5s_infinite_linear]" style={{ width: '40%' }} />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-slate-600 text-[10px] font-mono uppercase tracking-widest">
+                  Ready to Trace
+                </p>
+              )}
             </div>
           </div>
         </div>
