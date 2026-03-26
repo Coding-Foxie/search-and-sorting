@@ -89,7 +89,10 @@ export default function BinarySearchVisualizer() {
           <div className="lg:col-span-1 flex flex-col gap-4">
             <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
               <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Binary Steps</span>
-              <span className="text-3xl font-black text-purple-400">{isSearching || foundIndex !== -1 ? (currentStep ? currentArray.indexOf(currentArray[mid]) !== -1 ? '...' : '0' : '0') : '0'}</span>
+              {/* Change the span in your Left Column to this: */}
+              <span className="text-3xl font-black text-purple-400">
+                {currentStep?.stepNumber ?? 0}
+              </span>
               <div className="mt-4 pt-4 border-t border-slate-800">
                 <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Vs. Linear</span>
                 <span className="text-xl font-bold text-slate-500">{foundIndex !== -1 ? foundIndex + 1 : '—'}</span>
