@@ -68,7 +68,7 @@ export default function BinarySearchVisualizer() {
               value={goalInput}
               onChange={(e) => setGoalInput(e.target.value)}
               disabled={isSearching}
-              className="w-24 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-purple-500 outline-none transition-all opacity-80"
+              className="w-24 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-purple-500 outline-none transition-all opacity-80 appearance-none"
             />
           </div>
 
