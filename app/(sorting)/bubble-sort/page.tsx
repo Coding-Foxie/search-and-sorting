@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import useSound from 'use-sound';
-import { useBubbleSort } from '@/hooks/useBubbleSort';
+import { getBubbleSortSteps } from '@/lib/algorithms/bubbleSort';
+import { BubbleStep } from '@/lib/algorithms/bubbleSort';
+import { useVisualizer } from '@/hooks/useVisualizer';
 import { SortingHeader } from '@/components/sorting/SortingHeader';
 import { StatsSidebar } from '@/components/sorting/StatsSidebar';
 import { VisualizerStage } from '@/components/sorting/VisualizerStage';
@@ -13,18 +15,22 @@ export default function BubbleSortVisualizer() {
   const [speed, setSpeed] = useState(400);
   const [playSwapSound] = useSound('/sounds/swap.wav', { volume: 0.25, playbackRate: 1.5 });
   const [playSuccessSound] = useSound('/sounds/found.wav', { volume: 0.5 });
+  const [isNerdMode, setIsNerdMode] = useState(false);
 
   const currentArray = dataInput
     .split(',')
     .map(num => parseInt(num.trim()))
     .filter(num => !isNaN(num));
 
-  const { currentStep, isSorting, start, reset } = useBubbleSort(
-    currentArray,
+  const { currentStep, isSorting, start, reset } = useVisualizer<BubbleStep>(
     playSwapSound,
-    playSuccessSound,
-    speed
+    playSuccessSound
   );
+
+  const handleStart = () => {
+    const steps = getBubbleSortSteps(currentArray);
+    start(steps, speed); // Pass the steps and the speed here
+  };
 
   const handleRandomize = () => {
     const newArray = generateRandomArray(7); // Generates 7 random numbers
@@ -46,7 +52,7 @@ export default function BubbleSortVisualizer() {
           dataInput={dataInput}
           setDataInput={setDataInput}
           isSorting={isSorting}
-          onStart={start}
+          onStart={handleStart}
           onReset={reset}
           currentArrayLength={currentArray.length}
           speed={speed}
@@ -55,7 +61,14 @@ export default function BubbleSortVisualizer() {
         />
 
         <div className="flex-1 min-h-0 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
-          <StatsSidebar isSorting={isSorting} isSwapping={isSwapping} idxA={idxA} idxB={idxB} />
+          <StatsSidebar
+            isSorting={isSorting}
+            isSwapping={isSwapping}
+            idxA={idxA}
+            idxB={idxB}
+            valA={idxA !== -1 ? displayArray[idxA] : null}
+            valB={idxB !== -1 ? displayArray[idxB] : null}
+          />
           <VisualizerStage
             displayArray={displayArray}
             idxA={idxA}

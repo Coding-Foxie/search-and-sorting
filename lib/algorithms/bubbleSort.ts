@@ -1,4 +1,9 @@
-import { BubbleStep } from "@/hooks/useBubbleSort";
+export interface BubbleStep {
+  array: number[];
+  comparing: [number, number];
+  swapping: boolean;
+  sortedUntil: number;
+}
 
 export const getBubbleSortSteps = (initialArray: number[]): BubbleStep[] => {
   const arr = [...initialArray];
@@ -7,6 +12,7 @@ export const getBubbleSortSteps = (initialArray: number[]): BubbleStep[] => {
 
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n - i - 1; j++) {
+      // Frame: Comparing
       steps.push({
         array: [...arr],
         comparing: [j, j + 1],
@@ -15,6 +21,7 @@ export const getBubbleSortSteps = (initialArray: number[]): BubbleStep[] => {
       });
       if (arr[j] > arr[j + 1]) {
         [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        // Frame: Swapping
         steps.push({
           array: [...arr],
           comparing: [j, j + 1],
@@ -24,6 +31,7 @@ export const getBubbleSortSteps = (initialArray: number[]): BubbleStep[] => {
       }
     }
   }
+  // Final frame: Success
   steps.push({
     array: [...arr],
     comparing: [-1, -1],
