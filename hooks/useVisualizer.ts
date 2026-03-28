@@ -8,77 +8,64 @@ interface BaseSortStep {
 export const useVisualizer = <T extends BaseSortStep>(
   onSwap?: () => void,
   onComplete?: () => void,
+  isPaused: boolean = false, // Added isPaused
+  speed: number = 400, // Added speed to the hook
 ) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
   const [isSorting, setIsSorting] = useState(false);
   const [activeSteps, setActiveSteps] = useState<T[]>([]);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stepsRef = useRef<T[]>([]);
-  const indexRef = useRef<number>(0); // NEW: Track index in a Ref
 
-  // Cleanup on unmount to prevent memory leaks
+  // THE ENGINE: This effect drives the animation
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
+    let timer: NodeJS.Timeout;
 
-  const start = useCallback(
-    (steps: T[], speed: number) => {
-      if (!steps || steps.length === 0) return;
+    // Only run if sorting, NOT paused, and we have steps left
+    if (isSorting && !isPaused && currentStepIndex < activeSteps.length - 1) {
+      timer = setTimeout(() => {
+        const nextIndex = currentStepIndex + 1;
+        const nextFrame = activeSteps[nextIndex];
 
-      // 1. Reset everything before starting
-      if (timerRef.current) clearInterval(timerRef.current);
-
-      stepsRef.current = steps;
-      setActiveSteps(steps);
-      indexRef.current = 0; // Start at the beginning
-      setIsSorting(true);
-
-      timerRef.current = setInterval(() => {
-        // 2. Access the most current steps and current index
-        const allSteps = stepsRef.current;
-        const i = indexRef.current;
-
-        // 3. Strict Boundary Check
-        if (!allSteps || i >= allSteps.length) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          timerRef.current = null;
-          setIsSorting(false);
-          onComplete?.();
-          return;
-        }
-
-        // 4. Safe access to the frame
-        const currentFrame = allSteps[i];
-        if (currentFrame?.swapping) {
+        if (nextFrame?.swapping) {
           onSwap?.();
         }
 
-        // 5. Update UI and increment Ref
-        setCurrentStepIndex(i);
-        indexRef.current = i + 1;
+        setCurrentStepIndex(nextIndex);
+
+        // Check if we just finished the last step
+        if (nextIndex === activeSteps.length - 1) {
+          setIsSorting(false);
+          onComplete?.();
+        }
       }, speed);
-    },
-    [onSwap, onComplete],
-  );
+    }
+
+    return () => clearTimeout(timer);
+  }, [
+    isSorting,
+    isPaused,
+    currentStepIndex,
+    activeSteps,
+    speed,
+    onSwap,
+    onComplete,
+  ]);
+
+  const start = useCallback((steps: T[]) => {
+    if (!steps || steps.length === 0) return;
+    stepsRef.current = steps;
+    setActiveSteps(steps);
+    setCurrentStepIndex(0);
+    setIsSorting(true);
+  }, []);
 
   const reset = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = null;
-    indexRef.current = 0;
     setCurrentStepIndex(-1);
     setIsSorting(false);
     setActiveSteps([]);
     stepsRef.current = [];
   }, []);
-
-  const jumpToStep = (index: number) => {
-    if (index >= 0 && index < activeSteps.length) {
-      setCurrentStepIndex(index);
-    }
-  };
 
   return {
     currentStep: activeSteps[currentStepIndex],
@@ -87,6 +74,5 @@ export const useVisualizer = <T extends BaseSortStep>(
     reset,
     totalSteps: activeSteps.length,
     currentStepIndex,
-    jumpToStep,
   };
 };
