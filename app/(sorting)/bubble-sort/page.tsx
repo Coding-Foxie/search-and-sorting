@@ -32,11 +32,25 @@ export default function BubbleSortVisualizer() {
     currentStepIndex,
     totalSteps
   } = useVisualizer<BubbleStep>(
+    // 1. First Argument: The Swap Sound
     playSwapSound,
-    playSuccessSound,
+
+    // 2. Second Argument: The Completion Callback
+    (finalArray) => {
+      // Play the success sound here manually
+      playSuccessSound();
+
+      // Sync the input box with the finished sort result
+      const sortedString = finalArray.join(", ");
+      setDataInput(sortedString);
+    },
+
+    // 3. Third & Fourth: State & Speed
     isPaused,
     speed
   );
+
+  const algorithmType = 'bubble';
 
   const currentArray = dataInput
     .split(',')
@@ -92,17 +106,6 @@ export default function BubbleSortVisualizer() {
       (algorithmType === 'bubble' && lastSorted <= 0) ||
       (algorithmType !== 'bubble' && lastSorted >= displayArray.length)
     );
-
-  // 2. The "Sync-Back" Effect lives here!
-  useEffect(() => {
-    if (isFullyComplete) {
-      const sortedString = displayArray.join(", ");
-      // We update the dataInput state here because it's defined in this file
-      if (dataInput !== sortedString) {
-        setDataInput(sortedString);
-      }
-    }
-  }, [isFullyComplete, displayArray, dataInput]);
 
   return (
     // Changed overflow-hidden to overflow-y-auto to allow scrolling to the Nerd Layer

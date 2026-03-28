@@ -32,8 +32,20 @@ export default function BubbleSortVisualizer() {
     currentStepIndex,
     totalSteps
   } = useVisualizer<SelectionStep>(
+    // 1. First Argument: The Swap Sound
     playSwapSound,
-    playSuccessSound,
+
+    // 2. Second Argument: The Completion Callback
+    (finalArray) => {
+      // Play the success sound here manually
+      playSuccessSound();
+
+      // Sync the input box with the finished sort result
+      const sortedString = finalArray.join(", ");
+      setDataInput(sortedString);
+    },
+
+    // 3. Third & Fourth: State & Speed
     isPaused,
     speed
   );
