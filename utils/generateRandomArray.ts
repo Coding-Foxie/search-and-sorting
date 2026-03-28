@@ -13,7 +13,7 @@ export const generateRandomArray = (
   
   const {
     count = 7,
-    min = 10,
+    min = 0,
     max = 99,
     includeFloat = false,
     includeNegative = false,

@@ -7,7 +7,7 @@ interface BaseSortStep {
 
 export const useVisualizer = <T extends BaseSortStep>(
   onSwap?: () => void,
-  onComplete?: () => void,
+  onComplete?: (array: number[]) => void,
   isPaused: boolean = false, // Added isPaused
   speed: number = 400, // Added speed to the hook
 ) => {
@@ -16,6 +16,11 @@ export const useVisualizer = <T extends BaseSortStep>(
   const [activeSteps, setActiveSteps] = useState<T[]>([]);
 
   const stepsRef = useRef<T[]>([]);
+
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   // THE ENGINE: This effect drives the animation
   useEffect(() => {
@@ -36,7 +41,7 @@ export const useVisualizer = <T extends BaseSortStep>(
         // Check if we just finished the last step
         if (nextIndex === activeSteps.length - 1) {
           setIsSorting(false);
-          onComplete?.();
+          onCompleteRef.current?.(activeSteps[nextIndex].array);
         }
       }, speed);
     }

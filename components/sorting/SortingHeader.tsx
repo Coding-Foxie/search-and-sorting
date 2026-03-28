@@ -1,3 +1,5 @@
+import { Pause, Play, Settings, Shuffle } from "lucide-react";
+
 interface SortingHeaderProps {
   sortingAlgorithm: string;
   dataInput: string;
@@ -11,10 +13,11 @@ interface SortingHeaderProps {
   speed: number;
   setSpeed: (val: number) => void;
   onGenerate?: () => void;
+  setOpenGenerator: () => void;
 }
 
 export const SortingHeader = ({
-  sortingAlgorithm, dataInput, setDataInput, isSorting, onStart, onReset, isPaused, onPause, currentArrayLength, speed, setSpeed, onGenerate
+  sortingAlgorithm, dataInput, setDataInput, isSorting, onStart, onReset, isPaused, onPause, currentArrayLength, speed, setSpeed, onGenerate, setOpenGenerator
 }: SortingHeaderProps) => {
   // Helper to determine what the main button does
   const handleMainButtonClick = () => {
@@ -28,7 +31,7 @@ export const SortingHeader = ({
   return (
     <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-col md:flex-row items-center justify-between gap-6">
       <h1 className="text-xl font-black bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent uppercase tracking-tighter">
-        InnoTrace: {sortingAlgorithm}
+        InnoTrace: <br /> {sortingAlgorithm}
       </h1>
 
       <div className="flex flex-1 max-w-md gap-3">
@@ -50,7 +53,20 @@ export const SortingHeader = ({
           className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-orange-400 transition-all active:rotate-180 duration-500 disabled:opacity-30"
           title="Generate Random Array"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22" /><path d="m18 2 4 4-4 4" /><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2" /><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8" /><path d="m18 14 4 4-4 4" /></svg>
+          <Shuffle
+            size={20}
+            className="transition-transform duration-500 group-active:rotate-180"
+          />
+        </button>
+
+        <button
+          type="button"
+          onClick={setOpenGenerator} // Directly calling the prop
+          disabled={isSorting}
+          className="p-2 bg-slate-800 hover:bg-slate-700 hover:text-blue-400 rounded-xl border border-slate-700 transition-all active:scale-95 disabled:opacity-30"
+          title="Open Array Engine"
+        >
+          <Settings size={20} />
         </button>
       </div>
 
@@ -84,15 +100,18 @@ export const SortingHeader = ({
         >
           {/* Visual Cues for the User */}
           {!isSorting ? (
-            'START SORT'
+            <>
+              <Play size={16} fill="currentColor" />
+              START SORT
+            </>
           ) : isPaused ? (
             <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              <Play size={16} fill="currentColor" />
               CONTINUE
             </>
           ) : (
             <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+              <Pause size={16} fill="currentColor" />
               PAUSE
             </>
           )}

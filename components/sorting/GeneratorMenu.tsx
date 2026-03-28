@@ -50,7 +50,16 @@ export const GeneratorMenu = ({ settings, setSettings, onGenerate }: GeneratorMe
     key: K,
     value: GeneratorSettings[K]
   ) => {
-    setSettings({ ...settings, [key]: value });
+    let finalValue = value;
+
+    // --- 1. Range Constraint Logic ---
+    if (key === 'min' || key === 'max') {
+      const numValue = Number(value);
+      // Clamp the value between -100 and 100
+      finalValue = Math.min(Math.max(numValue, -100), 100) as GeneratorSettings[K];
+    }
+
+    setSettings({ ...settings, [key]: finalValue });
   };
 
   return (
@@ -80,25 +89,36 @@ export const GeneratorMenu = ({ settings, setSettings, onGenerate }: GeneratorMe
           />
         </div>
 
-        {/* Min/Max Inputs */}
+        {/* Min/Max Inputs with HTML constraints */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="text-[10px] text-slate-500 uppercase">Min Limit</label>
             <input
-              type="number" value={settings.min}
+              type="number"
+              min="-100"
+              max="100"
+              value={settings.min}
               onChange={(e) => updateSetting('min', Number(e.target.value))}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-blue-400 outline-none focus:border-blue-500/50"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-blue-400 outline-none focus:border-blue-500/50 transition-all"
             />
           </div>
           <div className="space-y-1.5">
             <label className="text-[10px] text-slate-500 uppercase">Max Limit</label>
             <input
-              type="number" value={settings.max}
+              type="number"
+              min="-100"
+              max="100"
+              value={settings.max}
               onChange={(e) => updateSetting('max', Number(e.target.value))}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-blue-400 outline-none focus:border-blue-500/50"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-blue-400 outline-none focus:border-blue-500/50 transition-all"
             />
           </div>
         </div>
+
+        {/* Info Note for the User */}
+        <p className="text-[9px] text-slate-00 font-mono text-center">
+          Range locked: [-100, 100]
+        </p>
 
         {/* Using our New Helper */}
         <div className="space-y-3 pt-2 border-t border-slate-800/50">
@@ -122,7 +142,7 @@ export const GeneratorMenu = ({ settings, setSettings, onGenerate }: GeneratorMe
           className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
         >
           <RefreshCw size={14} className="group-active:animate-spin" />
-          Regenerate
+          CONFIRM & GENERATE
         </button>
       </div>
     </div>

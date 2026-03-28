@@ -7,16 +7,17 @@ import { SortingHeader } from '@/components/sorting/SortingHeader';
 import { StatsSidebar } from '@/components/sorting/StatsSidebar';
 import { VisualizerStage } from '@/components/sorting/VisualizerStage';
 import { generateRandomArray } from '@/utils/generateRandomArray';
-import { ChevronDown, Code2, Terminal, Settings } from 'lucide-react';
+import { ChevronDown, Code2, Terminal } from 'lucide-react';
 import { getSelectionSortSteps, SelectionStep } from '@/lib/algorithms/selectionSort';
 import { GeneratorMenu, GeneratorSettings } from '@/components/sorting/GeneratorMenu';
+// import { useLongPress } from '@/hooks/useLongPress';
 
 export default function BubbleSortVisualizer() {
   const [dataInput, setDataInput] = useState("45, 12, 50, 23, 5, 31, 18");
   const [speed, setSpeed] = useState(400);
   const [playSwapSound] = useSound('/sounds/swap.wav', { volume: 0.25, playbackRate: 1.5 });
   const [playSuccessSound] = useSound('/sounds/found.wav', { volume: 0.5 });
-  const [isNerdMode, setIsNerdMode] = useState(false);
+  const [isNerdMode, setIsNerdMode] = useState(true);
 
   // State for the random number generation setting menu
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -61,11 +62,14 @@ export default function BubbleSortVisualizer() {
 
   const handleGenerate = () => {
     reset();
-    // Call your random array utility here using 'settings'
-    // const newArr = generateRandomArray(settings);
-    // setCurrentArray(newArr);
-    console.log("Generating with:", settings);
-    setIsMenuOpen(false); // Close menu after generating
+    const newNumbers = generateRandomArray(settings); // Ensure this returns [number, number...]
+
+    // Format the array back into a string for your state
+    const newString = newNumbers.join(", ");
+    setDataInput(newString);
+
+    setIsMenuOpen(false);
+    setIsPaused(false); // Make sure it's ready to play
   };
 
   const displayArray = isSorting && currentStep
@@ -74,6 +78,8 @@ export default function BubbleSortVisualizer() {
   const [idxA, idxB] = currentStep?.comparing ?? [-1, -1];
   const isSwapping = currentStep?.swapping ?? false;
   const lastSorted = currentStep?.sortedUntil ?? currentArray.length;
+
+  // const menuTrigger = useLongPress(() => setIsMenuOpen(true));
 
   return (
     // Changed overflow-hidden to overflow-y-auto to allow scrolling to the Nerd Layer
@@ -98,25 +104,27 @@ export default function BubbleSortVisualizer() {
             speed={speed}
             setSpeed={setSpeed}
             onGenerate={handleGenerate}
+            setOpenGenerator={() => setIsMenuOpen(true)}
           />
 
           {/* --- THE GENERATOR MENU --- */}
           {isMenuOpen && (
-            <>
-              {/* Click outside to close */}
+            <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
+              {/* This backdrop closes the menu if you click anywhere else */}
               <div
-                className="fixed inset-0 z-40"
+                className="absolute inset-0 cursor-pointer"
                 onClick={() => setIsMenuOpen(false)}
               />
-              {/* The Menu Panel */}
-              <div className="absolute right-6 top-20 z-50 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+
+              {/* The Actual Menu */}
+              <div className="relative z-[110] transform transition-all">
                 <GeneratorMenu
                   settings={settings}
                   setSettings={setSettings}
                   onGenerate={handleGenerate}
                 />
               </div>
-            </>
+            </div>
           )}
 
           <div className="flex-1 min-h-0 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
@@ -135,6 +143,7 @@ export default function BubbleSortVisualizer() {
               isSwapping={isSwapping}
               lastSorted={lastSorted}
               isSorting={isSorting}
+              currentStepIndex={currentStepIndex}
               algorithmType='selection'
             />
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useSound from 'use-sound';
 import { getBubbleSortSteps, BubbleStep } from '@/lib/algorithms/bubbleSort';
 
@@ -10,15 +10,19 @@ import { StatsSidebar } from '@/components/sorting/StatsSidebar';
 import { VisualizerStage } from '@/components/sorting/VisualizerStage';
 import { generateRandomArray } from '@/utils/generateRandomArray';
 import { ChevronDown, Code2, Terminal } from 'lucide-react';
+// import { useLongPress } from '@/hooks/useLongPress';
+import { GeneratorMenu } from '@/components/sorting/GeneratorMenu';
 
 export default function BubbleSortVisualizer() {
   const [dataInput, setDataInput] = useState("45, 12, 50, 23, 5, 31, 18");
   const [speed, setSpeed] = useState(400);
+
   const [playSwapSound] = useSound('/sounds/swap.wav', { volume: 0.25, playbackRate: 1.5 });
   const [playSuccessSound] = useSound('/sounds/found.wav', { volume: 0.5 });
-  const [isNerdMode, setIsNerdMode] = useState(false);
 
+  const [isNerdMode, setIsNerdMode] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const {
     currentStep,
@@ -30,13 +34,34 @@ export default function BubbleSortVisualizer() {
   } = useVisualizer<BubbleStep>(
     playSwapSound,
     playSuccessSound,
-    isPaused, // 👈 Hook now watches this
-    speed     // 👈 Hook now watches this
+    isPaused,
+    speed
   );
 
+  const currentArray = dataInput
+    .split(',')
+    .map(num => parseFloat(num.trim()))
+    .filter(num => !isNaN(num));
+
+  const displayArray = isSorting && currentStep
+    ? currentStep.array
+    : currentArray;
+  const [idxA, idxB] = currentStep?.comparing ?? [-1, -1];
+  const isSwapping = currentStep?.swapping ?? false;
+  const lastSorted = currentStep?.sortedUntil ?? currentArray.length;
+
   const handleStart = () => {
-    const steps = getBubbleSortSteps(currentArray);
-    start(steps); // No need to pass speed here anymore
+    // Always reset before starting a new run to clear "Sorted" highlights
+    reset();
+
+    // Use the CURRENT text in the input box to build the steps
+    const numbersToSort = dataInput
+      .split(',')
+      .map(num => parseFloat(num.trim()))
+      .filter(num => !isNaN(num));
+
+    const steps = getBubbleSortSteps(numbersToSort);
+    start(steps);
   };
 
   const handlePause = () => {
@@ -51,31 +76,33 @@ export default function BubbleSortVisualizer() {
     includeNegative: false
   });
 
-  const currentArray = dataInput
-    .split(',')
-    .map(num => parseFloat(num.trim()))
-    .filter(num => !isNaN(num));
-
-  // const { currentStep, isSorting, start, reset, currentStepIndex, totalSteps } = useVisualizer<BubbleStep>(
-  //   playSwapSound,
-  //   playSuccessSound
-  // );
-
-  const handleRandomize = () => {
-    reset(); // Stop any current sorting
-
-    // Pass the actual state object!
+  const handleGenerate = () => {
+    reset(); // Kill any active sorting immediately
     const newArray = generateRandomArray(genSettings);
-
     setDataInput(newArray.join(", "));
+    setIsPaused(false);
+    setIsMenuOpen(false);
   };
 
-  const displayArray = isSorting && currentStep
-    ? currentStep.array
-    : currentArray;
-  const [idxA, idxB] = currentStep?.comparing ?? [-1, -1];
-  const isSwapping = currentStep?.swapping ?? false;
-  const lastSorted = currentStep?.sortedUntil ?? currentArray.length;
+  const isFullyComplete =
+    !isSorting &&
+    currentStepIndex !== -1 &&
+    displayArray.length > 0 &&
+    (
+      (algorithmType === 'bubble' && lastSorted <= 0) ||
+      (algorithmType !== 'bubble' && lastSorted >= displayArray.length)
+    );
+
+  // 2. The "Sync-Back" Effect lives here!
+  useEffect(() => {
+    if (isFullyComplete) {
+      const sortedString = displayArray.join(", ");
+      // We update the dataInput state here because it's defined in this file
+      if (dataInput !== sortedString) {
+        setDataInput(sortedString);
+      }
+    }
+  }, [isFullyComplete, displayArray, dataInput]);
 
   return (
     // Changed overflow-hidden to overflow-y-auto to allow scrolling to the Nerd Layer
@@ -99,8 +126,29 @@ export default function BubbleSortVisualizer() {
             currentArrayLength={currentArray.length}
             speed={speed}
             setSpeed={setSpeed}
-            onGenerate={handleRandomize}
+            onGenerate={handleGenerate}
+            setOpenGenerator={() => setIsMenuOpen(true)}
           />
+
+          {/* --- THE GENERATOR MENU OVERLAY --- */}
+          {isMenuOpen && (
+            <div className="absolute inset-0 z-[200] flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-4">
+              {/* Clickable Backdrop to close */}
+              <div
+                className="absolute inset-0 cursor-pointer"
+                onClick={() => setIsMenuOpen(false)}
+              />
+
+              {/* The actual menu component */}
+              <div className="relative z-[210] animate-in zoom-in-95 duration-200">
+                <GeneratorMenu
+                  settings={genSettings}
+                  setSettings={setGenSettings}
+                  onGenerate={handleGenerate}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 min-h-0 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
             <StatsSidebar
@@ -118,6 +166,7 @@ export default function BubbleSortVisualizer() {
               isSwapping={isSwapping}
               lastSorted={lastSorted}
               isSorting={isSorting}
+              currentStepIndex={currentStepIndex}
               algorithmType='bubble'
             />
           </div>
@@ -141,7 +190,7 @@ export default function BubbleSortVisualizer() {
             </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight">Algorithm Deep-Dive</h2>
-              <p className="text-xs text-slate-500 font-mono">Exploring: Optimized Bubble Sort</p>
+              <p className="text-xs text-slate-500 font-mono">Exploring: Bubble Sort</p>
             </div>
           </div>
 

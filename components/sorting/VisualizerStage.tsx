@@ -1,16 +1,19 @@
+import { useEffect } from "react";
+
 interface VisualizerStageProps {
   displayArray: number[];
   idxA: number;
   idxB: number;
-  isSwapping: boolean;
+  isSwapping: boolean; 
   lastSorted: number;
   isSorting: boolean;
+  currentStepIndex: number;
   algorithmType: 'bubble' | 'selection' | 'insertion';
 }
 
 
 export const VisualizerStage = ({
-  displayArray, idxA, idxB, isSwapping, lastSorted, isSorting, algorithmType
+  displayArray, idxA, idxB, isSwapping, lastSorted, isSorting, currentStepIndex, algorithmType
 }: VisualizerStageProps) => {
 
   // Logic to determine if a specific index is part of the "Sorted Wall"
@@ -25,10 +28,25 @@ export const VisualizerStage = ({
   };
 
   // Determine if the entire array is finished
-  const isFullyComplete = !isSorting && (
-    (algorithmType === 'bubble' && lastSorted <= 0) ||
-    (algorithmType !== 'bubble' && lastSorted >= displayArray.length - 1)
-  );
+  const isFullyComplete =
+    !isSorting &&                // 1. Must not be currently sorting
+    currentStepIndex !== -1 &&   // 2. Must have actually completed at least one step
+    displayArray.length > 0 &&   // 3. Must have data
+    (
+      (algorithmType === 'bubble' && lastSorted <= 0) ||
+      (algorithmType !== 'bubble' && lastSorted >= displayArray.length)
+    );
+
+  useEffect(() => {
+    if (isFullyComplete && displayArray.length > 0) {
+      const sortedString = displayArray.join(", ");
+      // Only update if it's actually different to avoid infinite loops
+      if (dataInput !== sortedString) {
+        setDataInput(sortedString);
+      }
+    }
+  }, [isFullyComplete, displayArray, dataInput]);
+
 
   return (
     <div className="lg:col-span-3 bg-slate-950/30 rounded-2xl border border-slate-800/50 p-8 flex flex-col items-center justify-center relative overflow-hidden">

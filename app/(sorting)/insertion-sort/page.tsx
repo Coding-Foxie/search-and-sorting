@@ -9,15 +9,18 @@ import { VisualizerStage } from '@/components/sorting/VisualizerStage';
 import { generateRandomArray } from '@/utils/generateRandomArray';
 import { ChevronDown, Code2, Terminal } from 'lucide-react';
 import { getInsertionSortSteps, InsertionStep } from '@/lib/algorithms/insertionSort';
+import { GeneratorMenu } from '@/components/sorting/GeneratorMenu';
 
 export default function BubbleSortVisualizer() {
   const [dataInput, setDataInput] = useState("45, 12, 50, 23, 5, 31, 18");
   const [speed, setSpeed] = useState(400);
   const [playSwapSound] = useSound('/sounds/swap.wav', { volume: 0.25, playbackRate: 1.5 });
   const [playSuccessSound] = useSound('/sounds/found.wav', { volume: 0.5 });
-  const [isNerdMode, setIsNerdMode] = useState(false);
+  const [isNerdMode, setIsNerdMode] = useState(true);
 
   const [isPaused, setIsPaused] = useState(false);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const {
     currentStep,
@@ -55,13 +58,21 @@ export default function BubbleSortVisualizer() {
     .map(num => parseFloat(num.trim()))
     .filter(num => !isNaN(num));
 
-  const handleRandomize = () => {
-    reset(); // Stop any current sorting
+  const handleGenerate = () => {
+    // 1. Kill the previous sort state immediately
+    reset();
 
-    // Pass the actual state object!
+    // 2. Generate new data based on your -100 to 100 settings
     const newArray = generateRandomArray(genSettings);
 
+    // 3. Update the input string
     setDataInput(newArray.join(", "));
+
+    // 4. Close the menu if it was open
+    setIsMenuOpen(false);
+
+    // 5. Explicitly reset pause so the 'START' button returns to 'START'
+    setIsPaused(false);
   };
 
   const displayArray = isSorting && currentStep
@@ -93,8 +104,29 @@ export default function BubbleSortVisualizer() {
             currentArrayLength={currentArray.length}
             speed={speed}
             setSpeed={setSpeed}
-            onGenerate={handleRandomize}
+            onGenerate={handleGenerate}
+            setOpenGenerator={() => setIsMenuOpen(true)}
           />
+
+          {/* --- THE GENERATOR MENU OVERLAY --- */}
+          {isMenuOpen && (
+            <div className="absolute inset-0 z-[200] flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-4">
+              {/* Clickable Backdrop to close */}
+              <div
+                className="absolute inset-0 cursor-pointer"
+                onClick={() => setIsMenuOpen(false)}
+              />
+
+              {/* The actual menu component */}
+              <div className="relative z-[210] animate-in zoom-in-95 duration-200">
+                <GeneratorMenu
+                  settings={genSettings}
+                  setSettings={setGenSettings}
+                  onGenerate={handleGenerate}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 min-h-0 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
             <StatsSidebar
@@ -112,6 +144,7 @@ export default function BubbleSortVisualizer() {
               isSwapping={isSwapping}
               lastSorted={lastSorted}
               isSorting={isSorting}
+              currentStepIndex={currentStepIndex}
               algorithmType='insertion'
             />
           </div>
