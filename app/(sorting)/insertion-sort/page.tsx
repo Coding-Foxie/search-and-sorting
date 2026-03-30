@@ -7,19 +7,22 @@ import { SortingHeader } from '@/components/sorting/SortingHeader';
 import { StatsSidebar } from '@/components/sorting/StatsSidebar';
 import { VisualizerStage } from '@/components/sorting/VisualizerStage';
 import { generateRandomArray } from '@/utils/generateRandomArray';
-import { ChevronDown, Code2, Terminal } from 'lucide-react';
 import { getInsertionSortSteps, InsertionStep } from '@/lib/algorithms/insertionSort';
 import { GeneratorMenu } from '@/components/sorting/GeneratorMenu';
+import { DeepDiveHeader } from '@/components/sorting/DeepDiveHeader';
+import { CodeViewer } from '@/components/sorting/CodeViewer';
+import { ComplexityCard } from '@/components/sorting/ComplexityCard';
+import { CodeLine } from '@/types/sorting';
+import { StepController } from '@/components/sorting/StepController';
+import { MiniVisualizer } from '@/components/sorting/MiniVisualizer';
+import { InputSnapshot } from '@/components/sorting/InputSnapshot';
 
-export default function BubbleSortVisualizer() {
+export default function InsertionSortVisualizer() {
   const [dataInput, setDataInput] = useState("45, 12, 50, 23, 5, 31, 18");
   const [speed, setSpeed] = useState(400);
   const [playSwapSound] = useSound('/sounds/swap.wav', { volume: 0.25, playbackRate: 1.5 });
   const [playSuccessSound] = useSound('/sounds/found.wav', { volume: 0.5 });
-  const [isNerdMode, setIsNerdMode] = useState(true);
-
   const [isPaused, setIsPaused] = useState(false);
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const {
@@ -28,7 +31,11 @@ export default function BubbleSortVisualizer() {
     start,
     reset,
     currentStepIndex,
-    totalSteps
+    totalSteps,
+    initialStateSnapshot,
+    setInitialStateSnapshot,
+    stepForward,
+    stepBackward
   } = useVisualizer<InsertionStep>(
     // 1. First Argument: The Swap Sound
     playSwapSound,
@@ -48,9 +55,44 @@ export default function BubbleSortVisualizer() {
     speed
   );
 
+  const insertionSortCode: CodeLine[] = [
+    { code: "function insertionSort(arr) {", indent: 0, isActive: () => false },
+    { code: "  for (let i = 1; i < n; i++) {", indent: 0, isActive: (s) => s.isSorting },
+    { code: "    let key = arr[i];", indent: 1, isActive: (s) => s.isSorting && !s.isSwapping },
+    {
+      code: "    while (j >= 0 && arr[j] > key) {",
+      indent: 1,
+      isActive: (s) => s.isSorting && s.isSwapping
+    },
+    {
+      code: "      arr[j + 1] = arr[j];",
+      indent: 2,
+      isActive: (s) => s.isSwapping,
+      color: "bg-red-500/10 text-red-400 border-l-2 border-red-500"
+    },
+    { code: "    }", indent: 1, isActive: () => false },
+    { code: "  }", indent: 0, isActive: () => false },
+  ];
+
   const handleStart = () => {
-    const steps = getInsertionSortSteps(currentArray);
-    start(steps); // useVisualizer handles the rest!
+    const numbersToSort = dataInput
+      .split(',')
+      .map(n => parseFloat(n.trim()))
+      .filter(n => !isNaN(n));
+
+    if (numbersToSort.length === 0) return;
+
+    if (numbersToSort.length > 20) {
+      alert("Whoa! Limit input to 20 numbers.");
+      return;
+    }
+
+    reset();
+    setIsPaused(false); // 🌟 PRO TIP: Always unpause when starting fresh!
+    setInitialStateSnapshot([...numbersToSort]);
+
+    const steps = getInsertionSortSteps(numbersToSort);
+    start(steps);
   };
 
   const handlePause = () => {
@@ -64,11 +106,6 @@ export default function BubbleSortVisualizer() {
     includeFloat: true,
     includeNegative: false
   });
-
-  const currentArray = dataInput
-    .split(',')
-    .map(num => parseFloat(num.trim()))
-    .filter(num => !isNaN(num));
 
   const handleGenerate = () => {
     // 1. Kill the previous sort state immediately
@@ -87,9 +124,15 @@ export default function BubbleSortVisualizer() {
     setIsPaused(false);
   };
 
+  const currentArray = dataInput
+    .split(',')
+    .map(num => parseFloat(num.trim()))
+    .filter(num => !isNaN(num));
+
   const displayArray = isSorting && currentStep
     ? currentStep.array
-    : currentArray;
+    : (initialStateSnapshot.length > 0 ? initialStateSnapshot : currentArray);
+
   const [idxA, idxB] = currentStep?.comparing ?? [-1, -1];
   const isSwapping = currentStep?.swapping ?? false;
   const lastSorted = currentStep?.sortedUntil ?? currentArray.length;
@@ -104,8 +147,6 @@ export default function BubbleSortVisualizer() {
 
           <SortingHeader
             sortingAlgorithm="Insertion Sort"
-            // isNerdMode={isNerdMode}
-            // onToggleNerd={() => setIsNerdMode(!isNerdMode)}
             dataInput={dataInput}
             setDataInput={setDataInput}
             isSorting={isSorting}
@@ -114,8 +155,6 @@ export default function BubbleSortVisualizer() {
             isPaused={isPaused}
             onPause={handlePause}
             currentArrayLength={currentArray.length}
-            speed={speed}
-            setSpeed={setSpeed}
             onGenerate={handleGenerate}
             setOpenGenerator={() => setIsMenuOpen(true)}
           />
@@ -148,6 +187,8 @@ export default function BubbleSortVisualizer() {
               idxB={idxB}
               valA={idxA !== -1 ? displayArray[idxA] : null}
               valB={idxB !== -1 ? displayArray[idxB] : null}
+              currentStepIndex={currentStepIndex}
+              totalSteps={totalSteps}
             />
             <VisualizerStage
               displayArray={displayArray}
@@ -158,95 +199,55 @@ export default function BubbleSortVisualizer() {
               isSorting={isSorting}
               currentStepIndex={currentStepIndex}
               algorithmType='insertion'
+              totalSteps={totalSteps}
+              isPaused={isPaused}
+              speed={speed}
+              setSpeed={setSpeed}
+              onStepForward={stepForward}
+              onStepBackward={stepBackward}
+              onTogglePause={handlePause}
             />
           </div>
-
-          {/* Nerd Mode Navigation Hint */}
-          {isNerdMode && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce text-blue-500/50 pointer-events-none">
-              <span className="text-[9px] uppercase tracking-[0.2em] mb-1">Nerd Lab Access</span>
-              <ChevronDown size={14} />
-            </div>
-          )}
         </div>
       </section>
 
       {/* --- FLOOR 2: THE NERD LAB (Algorithm Logic) --- */}
-      {isNerdMode && (
-        <section className="w-full max-w-6xl mx-auto px-4 py-12 space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
-          <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-            <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
-              <Terminal size={20} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight">Algorithm Deep-Dive</h2>
-              <p className="text-xs text-slate-500 font-mono">Exploring: Optimized Bubble Sort</p>
-            </div>
+<section className="w-full max-w-6xl mx-auto px-4 py-12 space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
+        <DeepDiveHeader
+          algorithmName="Insertion Sort"
+          isSorting={isSorting}
+          onStart={handleStart}
+          onReset={reset}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Logic & Complexity Card */}
+          <div className="lg:col-span-1 space-y-6">
+            <ComplexityCard worst="O(n²)" best="O(n)" space="O(1)" />
+
+            <InputSnapshot data={initialStateSnapshot} />
+
+            <MiniVisualizer
+              array={displayArray}
+              activeIndices={[idxA, idxB]}
+              swappingIndices={isSwapping ? [idxA, idxB] : []}
+              maxValue={Math.max(...displayArray)}
+            />
+
+            <StepController
+              current={currentStepIndex}
+              total={totalSteps}
+              isPaused={isPaused}
+              onStepForward={stepForward}
+              onStepBackward={stepBackward}
+              onTogglePause={handlePause}
+            />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Logic & Complexity Card */}
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                  <Code2 size={16} className="text-blue-400" />
-                  Complexity Analysis
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Time Complexity (Worst)</span>
-                    <span className="text-red-400 font-mono">O(n²)</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Time Complexity (Best)</span>
-                    <span className="text-green-400 font-mono">O(n)</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Space Complexity</span>
-                    <span className="text-blue-400 font-mono">O(1)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 className="text-sm font-semibold text-slate-300 mb-2 uppercase tracking-tighter">Current Progress</h3>
-                <div className="text-3xl font-mono font-bold text-blue-500">
-                  {Math.round(((currentStepIndex + 1) / totalSteps) * 100) || 0}%
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Step {currentStepIndex + 1} of {totalSteps} total operations
-                </p>
-              </div>
-            </div>
-
-            {/* Pseudo-code Layer */}
-            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-1 overflow-hidden shadow-2xl">
-              <div className="bg-slate-950/50 px-4 py-2 border-b border-slate-800 flex justify-between items-center">
-                <span className="text-[10px] font-mono text-slate-500 uppercase">bubbleSort.ts</span>
-                <div className="flex gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-red-500/20" />
-                  <div className="w-2 h-2 rounded-full bg-yellow-500/20" />
-                  <div className="w-2 h-2 rounded-full bg-green-500/20" />
-                </div>
-              </div>
-              <div className="p-6 font-mono text-sm leading-relaxed overflow-x-auto text-slate-400">
-                {/* We can map an array of code lines here later for highlighting */}
-                <p className="opacity-50">{"function bubbleSort(arr) {"}</p>
-                <p className="pl-4 opacity-50">{"  for (let i = 0; i < n; i++) {"}</p>
-                <p className={`pl-8 transition-colors ${isSwapping ? 'text-blue-400 bg-blue-500/5' : ''}`}>
-                  {"    if (arr[j] > arr[j + 1]) {"}
-                </p>
-                <p className={`pl-12 transition-colors ${isSwapping ? 'text-red-400 bg-red-500/5 font-bold' : ''}`}>
-                  {"      [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];"}
-                </p>
-                <p className="pl-8 opacity-50">{"    }"}</p>
-                <p className="pl-4 opacity-50">{"  }"}</p>
-                <p className="opacity-50">{"}"}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-    </div>
+          {/* Pseudo-code Layer */}
+          <CodeViewer filename="bubbleSort.js" lines={insertionSortCode} currentState={{ isSorting, isSwapping, idxA, idxB }} />
+        </div>
+      </section>
+    </div >
   );
 }

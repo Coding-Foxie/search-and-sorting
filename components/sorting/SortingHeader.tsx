@@ -10,14 +10,12 @@ interface SortingHeaderProps {
   isPaused: boolean;
   onPause: () => void;
   currentArrayLength: number;
-  speed: number;
-  setSpeed: (val: number) => void;
   onGenerate?: () => void;
   setOpenGenerator: () => void;
 }
 
 export const SortingHeader = ({
-  sortingAlgorithm, dataInput, setDataInput, isSorting, onStart, onReset, isPaused, onPause, currentArrayLength, speed, setSpeed, onGenerate, setOpenGenerator
+  sortingAlgorithm, dataInput, setDataInput, isSorting, onStart, onReset, isPaused, onPause, currentArrayLength, onGenerate, setOpenGenerator
 }: SortingHeaderProps) => {
   // Helper to determine what the main button does
   const handleMainButtonClick = () => {
@@ -70,22 +68,6 @@ export const SortingHeader = ({
         </button>
       </div>
 
-      {/* Speed Adjustor */}
-      <div className="flex items-center gap-4 bg-slate-950/50 px-4 py-2 rounded-xl border border-slate-800">
-        <span className="text-[10px] font-mono text-slate-500 uppercase">Speed</span>
-        <input
-          type="range"
-          min="50"
-          max="1000"
-          step="50"
-          value={speed}
-          onChange={(e) => setSpeed(Number(e.target.value))}
-          disabled={isSorting}
-          className="w-24 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-        />
-        <span className="text-[10px] font-mono text-orange-400 w-8 text-right">{speed}ms</span>
-      </div>
-
       <div className="flex gap-2">
         <button
           onClick={handleMainButtonClick}
@@ -102,7 +84,7 @@ export const SortingHeader = ({
           {!isSorting ? (
             <>
               <Play size={16} fill="currentColor" />
-              START SORT
+              START
             </>
           ) : isPaused ? (
             <>

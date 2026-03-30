@@ -1,5 +1,5 @@
-import { ComplexityCard } from './ComplexityCard';
 import { DSANumber } from './DSAnumber';
+import { ExecutionProgress } from './ExecutionProgress';
 
 interface StatsSidebarProps {
   isSorting: boolean;
@@ -8,20 +8,17 @@ interface StatsSidebarProps {
   idxB: number;
   valA: number | null;
   valB: number | null;
+  currentStepIndex: number;
+  totalSteps: number;
 }
 
-export const StatsSidebar = ({ isSorting, isSwapping, idxA, idxB, valA, valB }: StatsSidebarProps) => (
+export const StatsSidebar = ({ isSorting, isSwapping, idxA, idxB, valA, valB, currentStepIndex, totalSteps }: StatsSidebarProps) => (
   <div className="lg:col-span-1 flex flex-col gap-2 overflow-y-auto scrollbar-hide">
 
-    {/* Comparison Card */}
-    <ComplexityCard
-      bestCase="O(n)"
-      averageCase="O(n²)"
-      worstCase="O(n²)"
-    />
+    <ExecutionProgress current={currentStepIndex} total={totalSteps} />
 
     {/* Live Trace Card */}
-    <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 flex-1 shadow-xl">
+    <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 flex-1 shadow-xl">
       <span className="text-[10px] text-slate-500 font-mono uppercase block mb-4 tracking-widest">Live Trace</span>
 
       {/* Status Box */}
@@ -37,7 +34,7 @@ export const StatsSidebar = ({ isSorting, isSwapping, idxA, idxB, valA, valB }: 
 
           {/* Value Comparison UI */}
           {isSorting && valA !== null && valB !== null && (
-            <div className="mt-4 flex items-center justify-around bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
+            <div className="mt-2 flex items-center justify-around bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
               <DSANumber label="Value A" value={valA} highlight={isSwapping} />
               <div className="text-[10px] font-black text-slate-700 italic px-2">VS</div>
               <DSANumber label="Value B" value={valB} highlight={isSwapping} />

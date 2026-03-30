@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+import SpeedControl from "./SpeedAdjustot";
+import { StepController } from "./StepController";
+import SuccessNotification from "./SuccessNotification";
 
 interface VisualizerStageProps {
   displayArray: number[];
@@ -7,16 +9,23 @@ interface VisualizerStageProps {
   isSwapping: boolean;
   lastSorted: number;
   isSorting: boolean;
+  speed: number;
   currentStepIndex: number;
   algorithmType: 'bubble' | 'selection' | 'insertion';
+  totalSteps: number;      // Added this
+  isPaused: boolean;       // Added this
+  setSpeed: (val: number) => void;
+  onStepForward: () => void;
+  onStepBackward: () => void;
+  onTogglePause: () => void;
 }
 
 
 export const VisualizerStage = ({
-  displayArray, idxA, idxB, isSwapping, lastSorted, isSorting, currentStepIndex, algorithmType
+  displayArray, idxA, idxB, isSwapping, lastSorted, isSorting, speed, currentStepIndex, algorithmType, totalSteps, isPaused, setSpeed, onStepForward, onStepBackward, onTogglePause
 }: VisualizerStageProps) => {
 
-  
+
   // Logic to determine if a specific index is part of the "Sorted Wall"
   const checkIfSortedPart = (index: number) => {
     if (algorithmType === 'bubble') {
@@ -65,12 +74,27 @@ export const VisualizerStage = ({
       </div>
 
       {isFullyComplete && (
-        <div className="absolute bottom-12 animate-in fade-in slide-in-from-bottom-4">
-          <div className="bg-green-500 text-slate-950 px-8 py-2 rounded-full font-black uppercase tracking-widest shadow-[0_0_40px_rgba(34,197,94,0.4)]">
-            Array Sorted!
-          </div>
-        </div>
+        <SuccessNotification isVisible={isFullyComplete} />
       )}
+
+      <SpeedControl
+        speed={speed}
+        setSpeed={setSpeed}
+        isDisabled={isFullyComplete}
+      />
+
+      {isSorting && (
+        <StepController
+          current={currentStepIndex}
+          total={totalSteps}
+          isPaused={isPaused}
+          onStepForward={onStepForward}
+          onStepBackward={onStepBackward}
+          onTogglePause={onTogglePause}
+        />
+      )}
+
+
     </div>
   );
 };

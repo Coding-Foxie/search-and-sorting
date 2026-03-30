@@ -8,26 +8,35 @@ interface BaseSortStep {
 export const useVisualizer = <T extends BaseSortStep>(
   onSwap?: () => void,
   onComplete?: (array: number[]) => void,
-  isPaused: boolean = false, // Added isPaused
-  speed: number = 400, // Added speed to the hook
+  isPaused: boolean = false,
+  speed: number = 400,
 ) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
   const [isSorting, setIsSorting] = useState(false);
   const [activeSteps, setActiveSteps] = useState<T[]>([]);
 
-  const stepsRef = useRef<T[]>([]);
+  // 🌟 ADD THIS LINE: Define the snapshot state here
+  const [initialStateSnapshot, setInitialStateSnapshot] = useState<number[]>(
+    [],
+  );
 
+  const stepsRef = useRef<T[]>([]);
   const onCompleteRef = useRef(onComplete);
+
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  // THE ENGINE: This effect drives the animation
+  // THE ENGINE
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
-    // Only run if sorting, NOT paused, and we have steps left
-    if (isSorting && !isPaused && currentStepIndex < activeSteps.length - 1) {
+    if (
+      isSorting &&
+      !isPaused &&
+      activeSteps.length > 0 &&
+      currentStepIndex < activeSteps.length - 1
+    ) {
       timer = setTimeout(() => {
         const nextIndex = currentStepIndex + 1;
         const nextFrame = activeSteps[nextIndex];
@@ -38,7 +47,6 @@ export const useVisualizer = <T extends BaseSortStep>(
 
         setCurrentStepIndex(nextIndex);
 
-        // Check if we just finished the last step
         if (nextIndex === activeSteps.length - 1) {
           setIsSorting(false);
           onCompleteRef.current?.(activeSteps[nextIndex].array);
@@ -54,8 +62,20 @@ export const useVisualizer = <T extends BaseSortStep>(
     activeSteps,
     speed,
     onSwap,
-    onComplete,
+    // onComplete,
   ]);
+
+  const stepForward = useCallback(() => {
+    if (currentStepIndex < activeSteps.length - 1) {
+      setCurrentStepIndex((prev) => prev + 1);
+    }
+  }, [currentStepIndex, activeSteps.length]);
+
+  const stepBackward = useCallback(() => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex((prev) => prev - 1);
+    }
+  }, [currentStepIndex]);
 
   const start = useCallback((steps: T[]) => {
     if (!steps || steps.length === 0) return;
@@ -69,6 +89,8 @@ export const useVisualizer = <T extends BaseSortStep>(
     setCurrentStepIndex(-1);
     setIsSorting(false);
     setActiveSteps([]);
+    // ✅ This now works because the state is defined above!
+    setInitialStateSnapshot([]);
     stepsRef.current = [];
   }, []);
 
@@ -79,5 +101,10 @@ export const useVisualizer = <T extends BaseSortStep>(
     reset,
     totalSteps: activeSteps.length,
     currentStepIndex,
+    // 🌟 ADD THESE: Return them so your Page can use them
+    initialStateSnapshot,
+    setInitialStateSnapshot,
+    stepForward,
+    stepBackward,
   };
 };
