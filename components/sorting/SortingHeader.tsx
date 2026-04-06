@@ -1,4 +1,5 @@
 import { Pause, Play, Settings, Shuffle } from "lucide-react";
+import ModeToggle from "./ModeToggle";
 
 interface SortingHeaderProps {
   sortingAlgorithm: string;
@@ -66,6 +67,8 @@ export const SortingHeader = ({
         >
           <Settings size={20} />
         </button>
+
+        <ModeToggle />
       </div>
 
       <div className="flex gap-2">

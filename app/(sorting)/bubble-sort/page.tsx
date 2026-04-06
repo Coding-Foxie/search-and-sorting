@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import useSound from 'use-sound';
 import { getBubbleSortSteps, BubbleStep } from '@/lib/algorithms/bubbleSort';
 
@@ -9,83 +9,86 @@ import { SortingHeader } from '@/components/sorting/SortingHeader';
 import { StatsSidebar } from '@/components/sorting/StatsSidebar';
 import { VisualizerStage } from '@/components/sorting/VisualizerStage';
 import { generateRandomArray } from '@/utils/generateRandomArray';
-// import { useLongPress } from '@/hooks/useLongPress';
 import { GeneratorMenu } from '@/components/sorting/GeneratorMenu';
 import { ComplexityCard } from '@/components/sorting/ComplexityCard';
 import { DeepDiveHeader } from '@/components/sorting/DeepDiveHeader';
-import { CodeLine } from '@/types/sorting';
 import { CodeViewer } from '@/components/sorting/CodeViewer';
 import { MiniVisualizer } from '@/components/sorting/MiniVisualizer';
 import { InputSnapshot } from '@/components/sorting/InputSnapshot';
 import { StepController } from '@/components/sorting/StepController';
+import { useVisualizerStore } from '@/store/use-visualizer-store';
+import { ALGORITHM_CODE } from '@/constants/algorithm';
 
 export default function BubbleSortVisualizer() {
   const [dataInput, setDataInput] = useState("45, 12, 50, 23, 5, 31, 18");
-  const [speed, setSpeed] = useState(400);
+
+  const speed = useVisualizerStore((state) => state.speed);
+
+  const setIsPaused = useVisualizerStore((state) => state.setIsPaused);
+
+  const setIsRunning = useVisualizerStore((state) => state.setIsRunning);
 
   const [playSwapSound] = useSound('/sounds/swap.wav', { volume: 0.25, playbackRate: 1.5 });
   const [playSuccessSound] = useSound('/sounds/found.wav', { volume: 0.5 });
 
-  const [isPaused, setIsPaused] = useState(false);
+  const isPaused = useVisualizerStore((state) => state.isPaused);
+  const onTogglePause = useVisualizerStore((state) => state.onTogglePause);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const bubbleSortCode: CodeLine[] = [
-    { code: "function bubbleSort(arr) {", indent: 0, isActive: () => false },
-    { code: "for (let i = 0; i < n; i++) {", indent: 1, isActive: (s) => s.isSorting },
-    {
-      code: "if (arr[j] > arr[j + 1]) {",
-      indent: 2,
-      isActive: (s) => s.isSorting && !s.isSwapping
-    },
-    {
-      code: "[arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];",
-      indent: 3,
-      isActive: (s) => s.isSwapping,
-      color: "bg-red-500/10 text-red-400 border-l-2 border-red-500" // Custom Swap Style
-    },
-    { code: "}", indent: 2, isActive: () => false },
-    { code: "}", indent: 1, isActive: () => false },
-    { code: "}", indent: 0, isActive: () => false },
-  ];
+  const setupKeyboardShortcuts = useVisualizerStore((state) => state.setupKeyboardShortcuts);
+
+  useEffect(() => {
+    return setupKeyboardShortcuts();
+  }, [setupKeyboardShortcuts]);
 
   const {
     currentStep,
     isSorting,
+    isCompleted,
+    clearCompleted, // Ensure this is returned from your hook
     start,
     reset,
     currentStepIndex,
     totalSteps,
     initialStateSnapshot,
     setInitialStateSnapshot,
-    stepForward,
-    stepBackward
   } = useVisualizer<BubbleStep>(
-    // 1. First Argument: The Swap Sound
     playSwapSound,
-
-    // 2. Second Argument: The Completion Callback
     (finalArray) => {
-      // Play the success sound here manually
+      // 1. Update the "Source of Truth" string
+      setDataInput(finalArray.join(", "));
       playSuccessSound();
-
-      // Sync the input box with the finished sort result
-      const sortedString = finalArray.join(", ");
-      setDataInput(sortedString);
     },
-
-    // 3. Third & Fourth: State & Speed
     isPaused,
     speed
   );
 
-  const currentArray = dataInput
-    .split(',')
-    .map(num => parseFloat(num.trim()))
-    .filter(num => !isNaN(num));
+  // --- THE FIX FOR #2 & THE ACCESS ERROR ---
+  // This runs AFTER the hook is fully declared
+  useEffect(() => {
+    if (isCompleted) {
+      // This clears the "Old" data so the boxes stay sorted 
+      // and match the new dataInput exactly.
+      setInitialStateSnapshot([]);
+    }
+  }, [isCompleted, setInitialStateSnapshot]);
 
-  const displayArray = isSorting && currentStep
-    ? currentStep.array
-    : (initialStateSnapshot.length > 0 ? initialStateSnapshot : currentArray);
+  const currentArray = useMemo(() => {
+    return dataInput
+      .split(',')
+      .map(num => {
+        const parsed = parseFloat(num.trim());
+        return isNaN(parsed) ? 0 : parsed;
+      })
+      .filter(n => n !== 0);
+  }, [dataInput]);
+
+  // 2. Determine exactly what the boxes show
+  const displayArray =
+    (isSorting || isCompleted) && currentStep
+      ? currentStep.array
+      : currentArray;
 
   const [idxA, idxB] = currentStep?.comparing ?? [-1, -1];
   const isSwapping = currentStep?.swapping ?? false;
@@ -94,26 +97,29 @@ export default function BubbleSortVisualizer() {
   const handleStart = () => {
     const numbersToSort = dataInput
       .split(',')
-      .map(n => parseFloat(n.trim()))
-      .filter(n => !isNaN(n));
+      .map(n => {
+        const p = parseFloat(n.trim());
+        return isNaN(p) ? 0 : p;
+      })
+      .filter(n => n !== 0);
 
     if (numbersToSort.length === 0) return;
 
-    if (numbersToSort.length > 20) {
-      alert("Whoa! Limit input to 20 numbers.");
-      return;
-    }
-
+    // 1. Reset everything first
     reset();
-    setIsPaused(false); // 🌟 PRO TIP: Always unpause when starting fresh!
+
+    // 2. Set the snapshot IMMEDIATELY
     setInitialStateSnapshot([...numbersToSort]);
 
+    // 3. Start the process
     const steps = getBubbleSortSteps(numbersToSort);
     start(steps);
+    setIsRunning(true);
+    setIsPaused(false);
   };
 
   const handlePause = () => {
-    setIsPaused(!isPaused);
+    onTogglePause();
   };
 
   const [genSettings, setGenSettings] = useState({
@@ -125,12 +131,15 @@ export default function BubbleSortVisualizer() {
   });
 
   const handleGenerate = () => {
-    reset(); // Kill any active sorting immediately
+    reset();
     const newArray = generateRandomArray(genSettings);
     setDataInput(newArray.join(", "));
-    setIsPaused(false);
     setIsMenuOpen(false);
   };
+
+  if (!displayArray || displayArray.length === 0) {
+    console.log("Debug: currentArray is empty", currentArray);
+  }
 
   return (
     // Changed overflow-hidden to overflow-y-auto to allow scrolling to the Nerd Layer
@@ -143,7 +152,11 @@ export default function BubbleSortVisualizer() {
           <SortingHeader
             sortingAlgorithm="Bubble Sort"
             dataInput={dataInput}
-            setDataInput={setDataInput}
+            setDataInput={(val) => {
+              setDataInput(val);
+              clearCompleted();
+              setInitialStateSnapshot([]);
+            }}
             isSorting={isSorting}
             onStart={handleStart}
             onReset={reset}
@@ -174,34 +187,30 @@ export default function BubbleSortVisualizer() {
             </div>
           )}
 
-          <div className="flex-1 min-h-0 p-4 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
-            <StatsSidebar
-              isSorting={isSorting}
-              isSwapping={isSwapping}
-              idxA={idxA}
-              idxB={idxB}
-              valA={idxA !== -1 ? displayArray[idxA] : null}
-              valB={idxB !== -1 ? displayArray[idxB] : null}
-              currentStepIndex={currentStepIndex}
-              totalSteps={totalSteps}
-            />
-            <VisualizerStage
-              displayArray={displayArray}
-              idxA={idxA}
-              idxB={idxB}
-              isSwapping={isSwapping}
-              lastSorted={lastSorted}
-              isSorting={isSorting}
-              currentStepIndex={currentStepIndex}
-              algorithmType='bubble'
-              totalSteps={totalSteps}
-              isPaused={isPaused}
-              speed={speed}
-              setSpeed={setSpeed}
-              onStepForward={stepForward}
-              onStepBackward={stepBackward}
-              onTogglePause={handlePause}
-            />
+          <div className="flex-1 min-h-0 p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-1 min-h-0 overflow-y-auto">
+              <StatsSidebar
+                isSorting={isSorting}
+                isSwapping={isSwapping}
+                idxA={idxA}
+                idxB={idxB}
+                valA={idxA !== -1 ? displayArray[idxA] : null}
+                valB={idxB !== -1 ? displayArray[idxB] : null}
+                currentStepIndex={currentStepIndex}
+                totalSteps={totalSteps}
+              />
+            </div>
+            <div className="lg:col-span-3 min-h-0 relative">
+              <VisualizerStage
+                displayArray={displayArray}
+                idxA={idxA}
+                idxB={idxB}
+                isSwapping={isSwapping}
+                lastSorted={lastSorted}
+                isSorting={isSorting}
+                algorithmType='bubble'
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -229,18 +238,11 @@ export default function BubbleSortVisualizer() {
               maxValue={Math.max(...displayArray)}
             />
 
-            <StepController
-              current={currentStepIndex}
-              total={totalSteps}
-              isPaused={isPaused}
-              onStepForward={stepForward}
-              onStepBackward={stepBackward}
-              onTogglePause={handlePause}
-            />
+            <StepController />
           </div>
 
           {/* Pseudo-code Layer */}
-          <CodeViewer filename="bubbleSort.js" lines={bubbleSortCode} currentState={{ isSorting, isSwapping, idxA, idxB }} />
+          <CodeViewer filename="bubbleSort.js" lines={ALGORITHM_CODE.bubble} currentState={{ isSorting, isSwapping, idxA, idxB }} />
         </div>
       </section>
     </div>

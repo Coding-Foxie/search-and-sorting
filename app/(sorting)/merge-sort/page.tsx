@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import useSound from 'use-sound';
-import { getInsertionSortSteps, InsertionStep } from '@/lib/algorithms/insertionSort';
+import { getMergeSortSteps, MergeStep } from '@/lib/algorithms/mergeSort';
 
 import { useVisualizer } from '@/hooks/useVisualizer';
 import { SortingHeader } from '@/components/sorting/SortingHeader';
@@ -19,19 +19,20 @@ import { StepController } from '@/components/sorting/StepController';
 import { useVisualizerStore } from '@/store/use-visualizer-store';
 import { ALGORITHM_CODE } from '@/constants/algorithm';
 
-export default function InsertionSortVisualizer() {
+export default function MergeSortVisualizer() {
   const [dataInput, setDataInput] = useState("45, 12, 50, 23, 5, 31, 18");
+
+  // --- Store Selectors ---
   const speed = useVisualizerStore((state) => state.speed);
   const isPaused = useVisualizerStore((state) => state.isPaused);
-  const onTogglePause = useVisualizerStore((state) => state.onTogglePause);
   const setIsPaused = useVisualizerStore((state) => state.setIsPaused);
   const setIsRunning = useVisualizerStore((state) => state.setIsRunning);
+  const onTogglePause = useVisualizerStore((state) => state.onTogglePause);
+  const setupKeyboardShortcuts = useVisualizerStore((state) => state.setupKeyboardShortcuts);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [playSwapSound] = useSound('/sounds/swap.wav', { volume: 0.25, playbackRate: 1.5 });
   const [playSuccessSound] = useSound('/sounds/found.wav', { volume: 0.5 });
-
-  const setupKeyboardShortcuts = useVisualizerStore((state) => state.setupKeyboardShortcuts);
 
   useEffect(() => {
     return setupKeyboardShortcuts();
@@ -48,17 +49,18 @@ export default function InsertionSortVisualizer() {
     totalSteps,
     initialStateSnapshot,
     setInitialStateSnapshot,
-  } = useVisualizer<InsertionStep>(
+  } = useVisualizer<MergeStep>(
     playSwapSound,
     (finalArray) => {
-      playSuccessSound();
       setDataInput(finalArray.join(", "));
+      playSuccessSound();
     },
     isPaused,
     speed
   );
 
   // --- THE SYNC FIX ---
+  // This clears the snapshot when sorting finishes so the UI stays locked to the final sorted array.
   useEffect(() => {
     if (isCompleted) {
       setInitialStateSnapshot([]);
@@ -75,47 +77,53 @@ export default function InsertionSortVisualizer() {
       .filter(n => n !== 0);
   }, [dataInput]);
 
+  // --- DISPLAY LOGIC FIX ---
   const displayArray =
     (isSorting || isCompleted) && currentStep
       ? currentStep.array
-      : currentArray;
+      : currentArray; // 👈 Fallback to raw input if not sorting/completed
 
-  // Insertion Sort specific stats
   const [idxA, idxB] = currentStep?.comparing ?? [-1, -1];
   const isSwapping = currentStep?.swapping ?? false;
-  const lastSorted = currentStep?.sortedUntil ?? 0;
+  const activeRange = currentStep?.range;
 
   const handleStart = () => {
-    const numbersToSort = [...currentArray];
-    if (numbersToSort.length === 0) return;
+    if (currentArray.length === 0) return;
 
     reset();
 
+    // Use a small timeout to ensure state reset propagates
     setTimeout(() => {
       setIsRunning(true);
       setIsPaused(false);
-      setInitialStateSnapshot([...numbersToSort]);
-      const steps = getInsertionSortSteps(numbersToSort);
+      setInitialStateSnapshot([...currentArray]);
+      const steps = getMergeSortSteps(currentArray);
       start(steps);
     }, 10);
   };
 
+  const [genSettings, setGenSettings] = useState({
+    count: 8,
+    min: 0,
+    max: 100,
+    includeFloat: false,
+    includeNegative: false
+  });
+
   const handleGenerate = () => {
     reset();
-    const newArray = generateRandomArray({ count: 8, min: 10, max: 100 });
+    const newArray = generateRandomArray(genSettings);
     setDataInput(newArray.join(", "));
     setIsMenuOpen(false);
   };
 
   return (
     <div className="min-h-screen w-full bg-slate-950 font-sans text-slate-200 overflow-y-auto scroll-smooth">
-
-      {/* FLOOR 1: VISUALIZER */}
       <section className="h-[100dvh] w-full p-2 sm:p-4 flex flex-col items-center justify-center">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-6xl h-full max-h-[900px] overflow-hidden flex flex-col relative">
 
           <SortingHeader
-            sortingAlgorithm="Insertion Sort"
+            sortingAlgorithm="Merge Sort"
             dataInput={dataInput}
             setDataInput={(val) => {
               setDataInput(val);
@@ -135,48 +143,45 @@ export default function InsertionSortVisualizer() {
           {isMenuOpen && (
             <div className="absolute inset-0 z-[200] flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-4">
               <div className="absolute inset-0 cursor-pointer" onClick={() => setIsMenuOpen(false)} />
-              <div className="relative z-[210]">
+              <div className="relative z-[210] animate-in zoom-in-95 duration-200">
                 <GeneratorMenu
-                  settings={{ count: 8, min: 10, max: 100, includeFloat: false, includeNegative: false }}
-                  setSettings={() => { }} // Hook this to local state if needed
+                  settings={genSettings}
+                  setSettings={setGenSettings}
                   onGenerate={handleGenerate}
                 />
               </div>
             </div>
           )}
 
-          <div className="flex-1 min-h-0 p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-1 min-h-0 overflow-y-auto">
-              <StatsSidebar
-                isSorting={isSorting}
-                isSwapping={isSwapping}
-                idxA={idxA}
-                idxB={idxB}
-                valA={idxA !== -1 ? displayArray[idxA] : null}
-                valB={idxB !== -1 ? displayArray[idxB] : null}
-                currentStepIndex={currentStepIndex}
-                totalSteps={totalSteps}
-              />
-            </div>
-            <div className="lg:col-span-3 min-h-0 relative">
-              <VisualizerStage
-                displayArray={displayArray}
-                idxA={idxA}
-                idxB={idxB}
-                isSwapping={isSwapping}
-                lastSorted={lastSorted}
-                isSorting={isSorting}
-                algorithmType='insertion'
-              />
-            </div>
+          <div className="flex-1 min-h-0 p-4 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
+            <StatsSidebar
+              isSorting={isSorting}
+              isSwapping={isSwapping}
+              idxA={idxA}
+              idxB={idxB}
+              valA={idxA !== -1 ? displayArray[idxA] : null}
+              valB={idxB !== -1 ? displayArray[idxB] : null}
+              currentStepIndex={currentStepIndex}
+              totalSteps={totalSteps}
+            />
+            <VisualizerStage
+              displayArray={displayArray}
+              idxA={idxA}
+              idxB={idxB}
+              isSwapping={isSwapping}
+              lastSorted={0}
+              isSorting={isSorting}
+              algorithmType='merge'
+              range={activeRange}
+            />
           </div>
         </div>
       </section>
 
-      {/* FLOOR 2: NERD LAB */}
-      <section className="w-full max-w-6xl mx-auto px-4 py-12 space-y-8">
+      {/* Layer 2: Nerd Lab */}
+      <section className="w-full max-w-6xl mx-auto px-4 py-12 space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
         <DeepDiveHeader
-          algorithmName="Insertion Sort"
+          algorithmName="Merge Sort"
           isSorting={isSorting}
           onStart={handleStart}
           onReset={reset}
@@ -184,20 +189,23 @@ export default function InsertionSortVisualizer() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
-            <ComplexityCard worst="O(n²)" best="O(n)" space="O(1)" />
+            <ComplexityCard worst="O(n log n)" best="O(n log n)" space="O(n)" />
+
             <InputSnapshot data={initialStateSnapshot} />
+
             <MiniVisualizer
               array={displayArray}
               activeIndices={[idxA, idxB]}
               swappingIndices={isSwapping ? [idxA, idxB] : []}
               maxValue={Math.max(...displayArray, 1)}
             />
+
             <StepController />
           </div>
 
           <CodeViewer
-            filename="insertionSort.ts"
-            lines={ALGORITHM_CODE.insertion}
+            filename="mergeSort.ts"
+            lines={ALGORITHM_CODE.merge}
             currentState={{ isSorting, isSwapping, idxA, idxB }}
           />
         </div>

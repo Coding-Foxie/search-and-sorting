@@ -37,7 +37,7 @@ export const CodeViewer = ({ filename, lines, currentState }: CodeViewerProps) =
 
       {/* Code Area */}
       <div className="p-6 font-mono text-xs md:text-sm leading-relaxed overflow-x-auto flex-1 bg-slate-900/50">
-        {lines.map((line, idx) => {
+        {lines?.map((line, idx) => {
           const active = line.isActive(currentState);
 
           return (
@@ -63,6 +63,12 @@ export const CodeViewer = ({ filename, lines, currentState }: CodeViewerProps) =
             </div>
           );
         })}
+
+        {!lines && (
+          <div className="text-slate-600 italic">
+            Algorithm source code not found...
+          </div>
+        )}
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ const HomePage = () => {
         { name: "Bubble Sort", href: "/bubble-sort" },
         { name: "Selection Sort", href: "/selection-sort" },
         { name: "Insertion Sort", href: "/insertion-sort" },
+        { name: "Merge Sort", href: "/merge-sort" },
       ],
       color: "hover:border-purple-500/50"
     }

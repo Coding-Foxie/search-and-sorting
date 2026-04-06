@@ -1,19 +1,18 @@
 "use client";
 
-import React from 'react';
+import { useVisualizerStore } from '@/store/use-visualizer-store';
 
 interface SpeedControlProps {
-  speed?: number; // Made optional to prevent crashes
-  setSpeed?: (value: number) => void; // Made optional to prevent crashes
   isDisabled?: boolean;
 }
 
 // Using Standard Function for better Default Parameter support
 const SpeedControl = ({
-  speed = 400,            // Default if undefined
-  setSpeed = () => { },    // Fallback empty function
   isDisabled = false
 }: SpeedControlProps) => {
+  const speed = useVisualizerStore((state) => state.speed);
+  const setSpeed = useVisualizerStore((state) => state.setSpeed);
+
   return (
     <div className={`absolute top-4 right-4 z-30 transition-opacity duration-300 ${isDisabled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       <style>{`
