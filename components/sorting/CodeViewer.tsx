@@ -1,4 +1,5 @@
 import { CodeLine } from "@/types/sorting";
+import { useEffect, useState } from "react";
 
 interface AlgorithmState {
   isSorting: boolean;
@@ -16,6 +17,17 @@ interface CodeViewerProps {
 }
 
 export const CodeViewer = ({ filename, lines, currentState }: CodeViewerProps) => {
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // 3. Return a skeleton or null during SSR to prevent mismatch
+  if (!isMounted) {
+    return <div className="lg:col-span-2 bg-slate-900 h-[300px] animate-pulse rounded-2xl" />;
+  }
+  
   return (
     <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-1 overflow-hidden shadow-2xl h-full flex flex-col">
       {/* Tab Bar / Header */}

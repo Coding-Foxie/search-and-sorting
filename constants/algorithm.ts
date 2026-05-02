@@ -113,4 +113,88 @@ export const ALGORITHM_CODE: Record<string, CodeLine[]> = {
       isActive: (s) => false,
     },
   ],
+  linear: [
+    {
+      code: "function linearSearch(arr, target) {",
+      indent: 0,
+      isActive: (s) => s.isSorting,
+    },
+    {
+      code: "  for (let i = 0; i < arr.length; i++) {",
+      indent: 0,
+      isActive: (s) => s.isSorting && s.idxA >= 0 && s.idxA < 7, // Adjust '7' to your array length
+    },
+    {
+      code: "    if (arr[i] === target) {",
+      indent: 1,
+      isActive: (s) => s.isSorting && s.idxA >= 0 && !s.isSwapping, // Using 'isSwapping' as 'isFound' flag
+    },
+    {
+      code: "      return i; // Found!",
+      indent: 2,
+      isActive: (s) => s.idxA !== -1 && s.isCompleted, // Highlight when successful
+    },
+    {
+      code: "    }",
+      indent: 1,
+      isActive: () => false,
+    },
+    {
+      code: "  }",
+      indent: 0,
+      isActive: () => false,
+    },
+    {
+      code: "  return -1; // Not Found",
+      indent: 0,
+      isActive: (s) => s.isCompleted && s.idxA === -1,
+    },
+  ],
+  binary: [
+    {
+      code: "function binarySearch(arr, target) {",
+      indent: 0,
+      isActive: (s) => s.isSorting,
+    },
+    {
+      code: "  let low = 0, high = arr.length - 1;",
+      indent: 0,
+      isActive: (s) => s.isSorting && s.currentStepIndex === 0,
+    },
+    {
+      code: "  while (low <= high) {",
+      indent: 0,
+      isActive: (s) => s.isSorting && !s.isCompleted,
+    },
+    {
+      code: "    const mid = Math.floor((low + high) / 2);",
+      indent: 1,
+      isActive: (s) => s.idxMid !== -1, // Use a custom 'idxMid' state
+    },
+    {
+      code: "    if (arr[mid] === target) return mid;",
+      indent: 2,
+      isActive: (s) => s.idxMid !== -1 && s.isCompleted,
+    },
+    {
+      code: "    if (arr[mid] < target) low = mid + 1;",
+      indent: 2,
+      isActive: (s) => s.isSorting && s.direction === "right", // Track direction
+    },
+    {
+      code: "    else high = mid - 1;",
+      indent: 2,
+      isActive: (s) => s.isSorting && s.direction === "left",
+    },
+    {
+      code: "  }",
+      indent: 0,
+      isActive: () => false,
+    },
+    {
+      code: "  return -1;",
+      indent: 0,
+      isActive: (s) => s.isCompleted && s.foundIndex === -1,
+    },
+  ],
 };
